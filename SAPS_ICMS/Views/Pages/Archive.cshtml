@@ -1,0 +1,332 @@
+﻿@model List<SAPS_ICMS.Models.Case>
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Archive";
+    var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = null, WriteIndented = false };
+    var jsonCases = JsonSerializer.Serialize(Model, jsonOptions);
+    var searchString = ViewBag.SearchString as string;
+}
+
+<div style="margin-left:130px; padding:1px 16px; height:1000px;">
+
+    <div id="inactivityWarning" style="display:none; position:fixed; z-index:2000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.7);">
+        <div style="background-color:#fff; margin:15% auto; padding:30px; border:3px solid #f44336; width:500px; border-radius:10px; text-align:center; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+            <h2 style="color:#f44336; margin-bottom:20px;">⚠️ Inactivity Warning</h2>
+            <p style="font-size:18px; margin-bottom:20px;">
+                The archives will close in <strong id="countdownTimer" style="color:#f44336; font-size:24px;">30</strong> seconds due to inactivity.
+            </p>
+            <p style="color:#666; margin-bottom:30px;">
+                Click "I'm Still Here" to continue working, or you'll be logged out of the archives.
+            </p>
+            <button onclick="resetInactivityTimer()"
+                    style="padding:15px 30px; background-color:#4CAF50; color:white; border:none; border-radius:5px; font-size:16px; cursor:pointer; margin-right:10px;">
+                ✓ I'm Still Here
+            </button>
+            <button onclick="lockArchives()"
+                    style="padding:15px 30px; background-color:#f44336; color:white; border:none; border-radius:5px; font-size:16px; cursor:pointer;">
+                🔒 Lock Archives
+            </button>
+        </div>
+    </div>
+
+    <div id="timerDisplay" style="position: fixed; top: 70px; right: 20px; background: #fff; padding: 15px 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1500;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 20px;">⏱️</span>
+            <div>
+                <div style="font-size: 12px; color: #666;">Time Remaining</div>
+                <div id="timeRemaining" style="font-size: 18px; font-weight: bold; color: #2c3e50;">2:00</div>
+            </div>
+        </div>
+        <div style="margin-top: 10px;">
+            <form method="post" asp-action="ClearArchiveAccess" style="display: inline;">
+                @Html.AntiForgeryToken()
+                <button type="submit" style="padding: 8px 16px; background-color: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%;">
+                    🔒 Lock Archives
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <h2 class="mb-4 text-primary">Archived Cases List</h2>
+
+    <form method="get" asp-action="Archive" style="margin-bottom: 20px;">
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="text" 
+                   name="searchString" 
+                   value="@ViewBag.SearchString"
+                   class="form-control me-2"
+                   placeholder="Search by Case ID, Complainant, or Officer..."  />
+            <button type="submit" class="btn btn-primary">Search</button>
+
+            @if(!string.IsNullOrEmpty(ViewBag.SearchString))
+            {
+                <a href="@Url.Action("Archive")" style="padding:12px 24px; background-color:#666; color:white; text-decoration:none; border-radius:5px; display:inline-block;" onclick="refreshActivity()">Clear</a>
+            }
+        </div>
+        @if(!string.IsNullOrEmpty(ViewBag.SearchString))
+        {
+            <p style="margin-top:10px; color:#666; font-size:14px;">Showing results for:<strong>@ViewBag.SearchString</strong></p>
+        }
+    </form>
+
+        <div id="noCasesMessage" style="display:none; background:#f0f0f0; padding:30px; text-align:center; border-radius:10px;">
+            <p style="font-size:18px; color:#666;">No archived cases found</p>
+        </div>
+
+        <table>
+            <thead>
+                <tr style="background-color:#f2f2f2;">
+                    <th>Case ID</th>
+                    <th>Date Opened</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="archiveTable"></tbody>
+        </table>
+</div>
+
+<script>
+    let archivedCases = @Html.Raw(jsonCases);
+
+    const TOTAL_TIME = 120; // 2 minutes in seconds
+    const WARNING_TIME = 30; // Show warning at 30 seconds remaining
+    let remainingTime = TOTAL_TIME;
+    let inactivityTimer = null;
+    let countdownTimer = null;
+    let lastActivity = Date.now();
+
+    console.log("Archived cases loaded:", archivedCases);
+    console.log("Number of archived cases:", archivedCases ? archivedCases.length : 0);
+    // console.log("Is array?:", Array.isArray(archivedCases));
+
+    function renderArchive() {
+        console.log("=== renderArchive called ===");
+
+        if (!archivedCases || !Array.isArray(archivedCases)) {
+            console.error("archivedCases is not valid:", archivedCases);
+            document.getElementById("totalArchived").textContent = "0";
+            return;
+        }
+
+        const totalElement = document.getElementById("totalArchived");
+        if (totalElement) {
+            totalElement.textContent = archivedCases.length;
+        } else {
+            console.warn("totalArchived element not found");
+        }
+
+        const tbody = document.getElementById("archiveTable");
+        console.log("Table body found:", tbody);
+
+        if (!tbody) {
+            console.error("Archive table body not found");
+            return;
+        }
+
+        tbody.innerHTML = "";
+
+        if (archivedCases.length === 0) {
+            const noMsg = document.getElementById("noCasesMessage");
+            if (noMsg) noMsg.style.display = "block";
+            return;
+        }
+
+        console.log("Processing", archivedCases.length, "archived cases...");
+
+        archivedCases.forEach((c, index) => {
+            console.log(`Processing archived case ${index + 1}:`, c);
+
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+                <td>${escapeHtml(c.CaseId)}</td>
+                <td>${formatDate(c.Date)}</td>
+                <td><span style="padding:4px 8px; background-color:#c8e6c9; border-radius:4px;">Closed</span></td>
+                <td>
+                    <button onclick="viewCaseDetails(${c.CaseId}); refreshActivity();" style="padding:6px 12px; background-color:#2196F3; color:white; border:none; border-radius:4px; cursor:pointer;">
+                        View Details
+                    </button>
+                </td>`;
+            tbody.appendChild(row);
+        });
+        console.log("Archive table now has", tbody.children.length, "rows");
+    }
+
+    function escapeHtml(text) {
+        if (text === null || text === undefined) return '';
+        const div = document.createElement('div');
+        div.textContent = String(text);
+        return div.innerHTML;
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    }
+
+    function viewCaseDetails(caseId) {
+        const caseItem = archivedCases.find(c => c.CaseId === caseId);
+        if (!caseItem) {
+            alert("Case not found");
+            return;
+        }
+
+        window.location.href = `/Cases/Details/${caseId}`;
+    }
+
+    // Update timer display
+    function updateTimerDisplay() {
+        const minutes = Math.floor(remainingTime / 60);
+        const seconds = remainingTime % 60;
+        const display = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        const timerElement = document.getElementById('timeRemaining');
+        if (timerElement) {
+            timerElement.textContent = display;
+
+            // Change color based on time remaining
+            if (remainingTime <= 30) {
+                timerElement.style.color = '#f44336'; // Red
+            } else if (remainingTime <= 60) {
+                timerElement.style.color = '#FF9800'; // Orange
+            } else {
+                timerElement.style.color = '#2c3e50'; // Default
+            }
+        }
+    }
+
+    // Start inactivity timer
+    function startInactivityTimer() {
+        remainingTime = TOTAL_TIME;
+        updateTimerDisplay();
+
+        // Clear existing timer
+        if (inactivityTimer) {
+            clearInterval(inactivityTimer);
+        }
+
+        // Start countdown
+        inactivityTimer = setInterval(() => {
+            remainingTime--;
+            updateTimerDisplay();
+
+            // Show warning at 30 seconds
+            if (remainingTime === WARNING_TIME) {
+                showInactivityWarning();
+            }
+
+            // Expire at 0
+            if (remainingTime <= 0) {
+                expireArchiveAccess();
+            }
+        }, 1000);
+    }
+
+    // Show inactivity warning
+    function showInactivityWarning() {
+        document.getElementById('inactivityWarning').style.display = 'block';
+
+        // Start countdown in modal
+        let warningCountdown = WARNING_TIME;
+        document.getElementById('countdownTimer').textContent = warningCountdown;
+
+        if (countdownTimer) {
+            clearInterval(countdownTimer);
+        }
+
+        countdownTimer = setInterval(() => {
+            warningCountdown--;
+            document.getElementById('countdownTimer').textContent = warningCountdown;
+
+            if (warningCountdown <= 0) {
+                clearInterval(countdownTimer);
+            }
+        }, 1000);
+    }
+
+    // Reset inactivity timer
+    function resetInactivityTimer() {
+        document.getElementById('inactivityWarning').style.display = 'none';
+
+        if (countdownTimer) {
+            clearInterval(countdownTimer);
+        }
+
+        // Refresh server-side session
+        refreshActivity();
+
+        // Restart timer
+        startInactivityTimer();
+    }
+
+    // Refresh activity on server
+    function refreshActivity() {
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+        fetch('/Pages/RefreshArchiveAccess', {
+            method: 'POST',
+            headers: {
+                'RequestVerificationToken': token
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) {
+                console.log('Session expired, redirecting...');
+                window.location.href = '/Pages/VerifyPasswordForArchive';
+            }
+        })
+        .catch(error => console.error('Error refreshing access:', error));
+
+        lastActivity = Date.now();
+    }
+
+    // Expire archive access
+    function expireArchiveAccess() {
+        clearInterval(inactivityTimer);
+        clearInterval(countdownTimer);
+        alert('Your archive access has expired due to inactivity. You will be redirected to verify your password.');
+        lockArchives();
+    }
+
+    // Lock archives and redirect
+    function lockArchives() {
+        clearInterval(inactivityTimer);
+        clearInterval(countdownTimer);
+        window.location.href = '/Pages/ClearArchiveAccess';
+    }
+
+    // Track user activity
+    function trackActivity() {
+        refreshActivity();
+        startInactivityTimer();
+    }
+
+    // Listen for user activity
+    document.addEventListener('mousemove', trackActivity);
+    document.addEventListener('keypress', trackActivity);
+    document.addEventListener('click', trackActivity);
+    document.addEventListener('scroll', trackActivity);
+
+    // Clear access when leaving page
+    window.addEventListener('beforeunload', function(e) {
+        // Send request to clear access (using sendBeacon for reliability)
+        navigator.sendBeacon('/Pages/ClearArchiveAccess');
+    });
+
+    if (archivedCases.length > 0) {
+        console.log("Calling renderArchive()...");
+        renderArchive();
+    } else{
+        console.log("No archived cases to render");
+    }
+
+    startInactivityTimer();
+
+</script>

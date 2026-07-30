@@ -1,0 +1,32 @@
+﻿@model SAPS_ICMS.Models.Officer
+@{
+    ViewData["Title"] = "Home";
+}
+
+<img src="https://seeklogo.com/images/S/south-african-police-service-logo-6BDCE827FF-seeklogo.com.png" alt="SAPS Logo" style="height:130px;" />
+
+<section class="home-welcome">
+    <h2>Welcome back</h2>
+    <p> @DateTime.Now.ToString("dddd, dd MMMM yyyy")</p>
+</section>
+
+<div class="home-grid">
+
+    <section class="home-section upcoming-tasks">
+        <h3> Upcoming Tasks</h3>
+        <a asp-controller="Pages" asp-action="Calendar" class="view-all">Open Calendar</a>
+    </section>
+
+</div>
+
+<div class="home-grid">
+
+    <section class="home-section resources">
+        <h3> Resources</h3>
+            <a asp-controller="Pages" asp-action="Help">User Guide</a>
+            <a href="mailto:support@icms.gov.za">Contact IT Support</a>
+    </section>
+</div>
+
+
+

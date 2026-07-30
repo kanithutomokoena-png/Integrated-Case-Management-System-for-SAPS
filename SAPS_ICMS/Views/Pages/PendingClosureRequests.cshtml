@@ -1,0 +1,154 @@
+﻿@model List<SAPS_ICMS.Models.CaseClosureRequest>
+@{ 
+    ViewData["Title"] = "Pending Closure Requests";
+}
+
+
+<div class="tabcontent">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3>Pending Case Closure Requests</h3>
+        <button onclick="window.location.href='/Pages/Dashboard'" style="padding: 8px 16px; cursor: pointer;">
+            Back to Dashboard
+        </button>
+    </div>
+
+    @if(!Model.Any())
+    {
+        <div style="background:#f0f0f0; padding:30px; text-align:center;border-radius:10px;">            
+            <p style="font-size:18px; color:#666;">No pending closure requests</p>
+        </div>    
+    }   
+    else   
+    {     
+        <table border="1" cellpadding="10" style="width: 100%;border-collapse: collapse;">          
+            <thead>              
+                <tr style="background-color: #f2f2f2;">                  
+                    <th>Request ID</th>                  
+                    <th>Case ID</th>
+                    <th>Requested By</th>
+                    <th>Requested Date</th>
+                    <th>Reason</th>
+                    <th>Actions</th>
+                    </thead>           
+                    <tbody>
+                        @foreach(var request in Model)               
+                        {                    
+                            <tr id="request-@request.RequestId">                       
+                                <td>@request.RequestId</td>                        
+                                <td>@request.CaseId</td>                           
+                                <td>@(request.RequestedByUserName?? "Unknown")</td>
+                                <td>@request.RequestedDate.ToString("MMM dd, yyyy HH:mm")</td>                       
+                                <td>@(request.Reason?? "No reason provided")</td>                        
+                                <td> 
+                                    <button onclick="showReviewModal(@request.RequestId,'@request.CaseId')" style="padding:6px 12px; background-color:#4CAF50; color:white; border:none;border-radius:4px; cursor:pointer; margin-right:5px;">      Approve          </button>
+                                    <hr />
+                                    <button onclick="showRejectModal(@request.RequestId, '@request.CaseId')" style="padding:6px 12px; background-color:#f44336; color:white; border:none; border-radius:4px; cursor:pointer;">      Reject         </button>                      
+                                </td>                    
+                                </tr>               
+                                }           
+                                </tbody>        
+                                </table>  
+                                }
+</div>
+
+@Html.AntiForgeryToken()
+
+
+<div id="reviewModal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.4);">
+    <div style="background-color:#fefefe; margin:10% auto; padding:20px; border:1px solid #888; width:500px; border-radius:10px;">
+        <h3 id="modalTitle">Review Closure Request</h3>
+        <p id="modalCaseInfo" style="margin: 15px 0; padding: 10px; background-color: #f9f9f9; border-radius: 5px;"></p>
+        <label for="adminNotes" style="display:block; margin-bottom:5px; font-weight:bold;">Admin Notes (Optional):</label>
+        <textarea id="adminNotes" rows="4" style="width:100%; padding:8px; margin-bottom:15px;" placeholder="Add any notes or comments..."></textarea>
+        <div style="text-align:right;">
+            <button onclick="closeReviewModal()" style="padding:8px 16px; margin-right:10px; cursor:pointer;">Cancel</button>
+            <button id="confirmButton" onclick="submitReview()" style="padding:8px 16px; color:white; border:none; cursor:pointer; border-radius:4px;"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentRequestId = null;
+    let currentAction = null;
+
+    function showReviewModal(requestId, caseId) {
+        currentRequestId = requestId;
+        currentAction = 'approve';
+        document.getElementById("modalTitle").textContent = "Approve Closure Request";
+        document.getElementById("modalCaseInfo").textContent = `Case: ${caseId}`;
+        document.getElementById("confirmButton").textContent = "Approve & Close Case";
+        document.getElementById("confirmButton").style.backgroundColor = "#4CAF50";
+        document.getElementById("reviewModal").style.display = "block";
+        document.getElementById("adminNotes").value = "";
+    }
+
+    function showRejectModal(requestId, caseId) {
+        currentRequestId = requestId;
+        currentAction = 'reject';
+        document.getElementById("modalTitle").textContent = "Reject Closure Request";
+        document.getElementById("modalCaseInfo").textContent = `Case: ${caseId}`;
+        document.getElementById("confirmButton").textContent = "Reject Request";
+        document.getElementById("confirmButton").style.backgroundColor = "#f44336";
+        document.getElementById("reviewModal").style.display = "block";
+        document.getElementById("adminNotes").value = "";
+    }
+
+    function closeReviewModal() {
+        document.getElementById("reviewModal").style.display = "none";
+        currentRequestId = null;
+        currentAction = null;
+    }
+
+    function submitReview() {
+        const adminNotes = document.getElementById("adminNotes").value.trim();
+        const approve = currentAction === 'approve';
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+        fetch('/Pages/ReviewClosureRequest', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                requestId: currentRequestId,
+                approve: approve,
+                adminNotes: adminNotes,
+                __RequestVerificationToken: token
+            })
+        })
+        .then(r => {
+            if (!r.ok) throw new Error('Network response was not ok');
+            return r.json();
+        })
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                // Remove the row from the table
+                const row = document.getElementById(`request-${currentRequestId}`);
+                if (row) {
+                    row.remove();
+                }
+                closeReviewModal();
+                
+                // Reload page if no more requests
+                const remainingRows = document.querySelectorAll('tbody tr').length;
+                if (remainingRows === 0) {
+                    location.reload();
+                }
+            } else {
+                alert("Error: " + data.message);
+            }
+        })
+        .catch(error => {
+            alert("An error occurred: " + error.message);
+        });
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById("reviewModal");
+        if (event.target == modal) {
+            closeReviewModal();
+        }
+    }
+</script>

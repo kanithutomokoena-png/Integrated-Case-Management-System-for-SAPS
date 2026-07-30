@@ -1,0 +1,64 @@
+﻿@{
+    ViewData["Title"] = "Help & Support";
+}
+
+<section class="help-header">
+    <h2>Help & Support</h2>
+    <p>Welcome to the ICMS Help Centre. Find guides, FAQs, and support information to assist you in using the system effectively.</p>
+</section>
+
+<section id="getting-started" class="help-section">
+    <h3>Getting Started</h3>
+        <p><strong>Login:</strong> Use your official SAPS credentials to access ICMS.</p>
+        <p><strong>Home Page:</strong> After login, you’ll see your dashboard with tasks, notifications, and quick actions.</p>
+        <p><strong>Profile:</strong> Update personal details or change your password from the profile icon in the top-right corner.</p>
+    
+</section>
+
+<section id="case-management" class="help-section">
+    <h3>Case Management</h3>
+    <ol>
+        <li>Click <strong>“New Case”</strong> from the navigation to register a case.</li>
+        <li>Fill in required details (case number, type, location, officer, etc.).</li>
+        <li>Attach evidence and witness info if available.</li>
+        <li>Use <strong>Search Case</strong> to find and update existing cases.</li>
+        <li>Closed cases are archived automatically and can be viewed in the <strong>Archives</strong> page.</li>
+    </ol>
+</section>
+
+<section id="tasks-calendar" class="help-section">
+    <h3>Tasks & Calendar</h3>
+        <p>Your tasks appear on the tasks and in the Calendar page.</p>
+        <p>View upcoming appointments easily.</p>
+        <p>You can delete tasks.</p>
+</section>
+
+<section id="faqs" class="help-section">
+    <h3>Frequently Asked Questions</h3>
+
+    <details>
+        <summary>How do I reset my password?</summary>
+        <p>Go to your Profile → Account Settings → Reset Password. If you're locked out, contact the system administrator.</p>
+    </details>
+
+    <details>
+        <summary>Where can I find closed or archived cases?</summary>
+        <p>Navigate to the <strong>Archives</strong> page in the main menu. You can search or filter by case number, status, or date.</p>
+    </details>
+
+    <details>
+        <summary>What if I find incorrect information in a case file?</summary>
+        <p>Contact your supervising officer or admin to request an official correction.</p>
+    </details>
+</section>
+
+
+<section id="support" class="help-section">
+    <h3>Contact Support</h3>
+    <p>If you can't find the answer here, please reach out to our support team:</p>
+    <p>Email: <a href="mailto:support@icms.gov.za">support@icms.gov.za</a></p>
+    <p>Phone: 012 345 6789 (Weekdays 08:00 - 16:00)</p>
+    
+    <a asp-controller="Support" asp-action="CreateTicket" class="report-problem-btn">📝 Report a Problem</a>
+</section>
+

@@ -1,0 +1,150 @@
+
+:root{
+    --saps-blue: #003366;
+    --saps-gold: #FFD700;
+    --saps-light: #f8f9fa;
+}
+
+.welcome-container{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background-color: var(--saps-light);
+    text-align: center;
+    padding: 20px;
+}
+
+.welcome-logo{
+    height: 130px;
+    margin-bottom: 20px;
+}
+
+.welcome-title{
+    color: var(--saps-blue);
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.welcome-tagline{
+    color: #6c757d;
+    font-size: 1.25rem;
+    margin-bottom: 25px;
+}
+
+.welcome-buttons .btn-login {
+    background-color: var(--saps-blue);
+    color: white;
+    font-size: 1.1rem;
+    padding: 10px 25px;
+    border: 2px solid black;
+    display: inline-block;
+    border-radius: 8px;
+    margin: 5px;
+}
+.welcome-buttons .btn-login:hover{
+    background-color: #002244;
+}
+
+.welcome-buttons .btn-register {
+    background-color: var(--saps-gold);
+    color: black;
+    font-size: 1.1rem;
+    padding: 10px 25px;
+    border: 2px solid black;
+    display: inline-block;
+    border-radius: 8px;
+    margin: 5px;
+}
+
+.welcome-buttons .btn-login:hover {
+    background-color: #e6c200;
+}
+
+.welcome-footer{
+    margin-top: 40px;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+
+
+/*.officer-info {
+    padding: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.officer-avatar {
+    font-size: 2.5rem;
+}
+
+.officer-info h5 {
+    margin: 0;
+    font-weight: 600;
+    color: var(--saps-gold);
+}
+
+.officer-info p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #ddd;
+}*/
+
+.statement {
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+    .statement h4 {
+        margin-top: 20px;
+        color: #003366;
+    }
+
+blockquote {
+    font-style: italic;
+    background: #eef5ff;
+    padding: 10px;
+    border-left: 5px solid #003366;
+}
+
+body {
+    margin: 0;
+    padding:0;
+}
+
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    width: 130px;
+    background-color: #f3f3f3;
+    position: fixed;
+    height: 100%;
+    overflow: auto;
+}
+
+li a {
+    display: block;
+    color: black;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+    li a.active {
+        background-color: #04AA6D;
+        color: white;
+    }
+
+    li a:hover:not(.active) {
+        background-color: #555555;
+        color: white;
+    }
+    th, td{
+        border-bottom: 1px solid #ddd;
+    }
+
+
+

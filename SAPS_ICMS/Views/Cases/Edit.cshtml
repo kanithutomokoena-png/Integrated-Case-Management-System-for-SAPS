@@ -1,0 +1,276 @@
+﻿@model SAPS_ICMS.Models.Case
+@{
+    ViewData["Title"] = "Edit Case";
+}
+
+@if(TempData["SuccessMessage"] != null)
+{
+    <div id="successBanner" class="alert alert-success">
+        @TempData["SuccessMessage"]
+        <span class="btn-close" onclick="document.getElementById('successBanner').style.display='none'">&times;</span>
+    </div>
+}
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<div style="margin-left:130px; padding:1px 16px; height:1000px;">
+    <h2>Edit Case - #@Model.CaseId</h2>
+
+    @if(ViewBag.EditRequestMode == true)
+    {
+        <div class="alert alert-info">
+            <strong>Note:</strong>
+            You are editing this case based on an approved edit request.
+            Once you save, this edit access will be removed.
+        </div>
+    }
+
+    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+        <input type="hidden" asp-for="CaseId" />
+        
+        <h4>1. Header Information</h4>
+        <div class="mb-3">
+            <label>Date:</label>
+            <input asp-for="Date" type="date" class="form-control" />
+        </div>
+        <br />
+        
+        <div class="mb-3">
+            <label for="LocationTaken">Location Taken:</label>
+            <select id="LocationTaken" asp-for="LocationTaken" class="form-control">
+                <option value="ParkRoad">Park Road</option>
+                <option value="Bayswater">Bayswater</option>
+                <option value="Navalsig">Navalsig</option>
+                <option value="Bainsvlei">Bainsvlei</option>
+                <option value="Glen">Glen</option>
+            </select>
+        </div>
+        <br />
+        
+        <div class="mb-3">
+            <label>Officer Taking Statement:</label>
+            <input type="text" asp-for="OfficerTakingStatement" class="form-control" />
+        </div>
+
+        <h4>2. Personal Details</h4>
+        <div class="mb-3">
+            <label>Complainant Name:</label>
+            <input type="text" asp-for="Complainant" class="form-control" />
+        </div>
+        <br />
+        
+        <div class="mb-3">
+            <label>Date of Birth:</label>
+            <input asp-for="DateOfBirth" type="date" class="form-control" />
+        </div>
+        <br />
+        
+        <div class="mb-3">
+            <label>Home Address:</label>
+            <input asp-for="HomeAddress" class="form-control" />
+        </div>
+        <br />
+        
+        <div class="mb-3">
+            <label>Phone Number:</label>
+            <input asp-for="PhoneNumber" class="form-control" />
+        </div>
+        <br />
+        
+        <div class="mb-3">
+            <label>Occupation:</label>
+            <input asp-for="Occupation" class="form-control" />
+        </div>
+        <br />
+        
+        <div class="mb-3">
+            <label>Relationship to Incident:</label><br />
+            <input type="radio" asp-for="RelationshipToIncident" value="Victim" /> Victim <br />
+            <input type="radio" asp-for="RelationshipToIncident" value="Witness" /> Witness <br />
+            <input type="radio" asp-for="RelationshipToIncident" value="Suspect" /> Suspect <br />
+        </div>
+
+        <h4>3. Statement Body</h4>
+        <div class="mb-3">
+            <label>Case Information:</label>
+            <textarea asp-for="CaseInformation" class="form-control" rows="5"></textarea>
+        </div>
+
+        <h4>4. Declaration and Signatures</h4>
+        <div class="mb-3">
+            <label>Complainant Signature:</label>
+            <input asp-for="ComplainantSignature" class="form-control" />
+        </div>
+        <br />
+        
+        <div class="mb-3">
+            <label>Complainant Signature Date:</label>
+            <input asp-for="ComplainantSignatureDate" type="date" class="form-control" />
+        </div>
+        <br />
+        
+        <div class="mb-3">
+            <label>Complainant Signature Time:</label>
+            <input asp-for="ComplainantSignatureTime" type="time" class="form-control" />
+        </div>
+        <br />
+        
+        <div class="mb-3">
+            <label>Officer Signature:</label>
+            <input asp-for="OfficerSignature" class="form-control" />
+        </div>
+        <br />
+        
+        <div class="mb-3">
+            <label>Officer Signature Date:</label>
+            <input asp-for="OfficerSignatureDate" type="date" class="form-control" />
+        </div>
+
+        <h4>5. Status</h4>
+        <div class="mb-3">
+            <label>Case Status:</label>
+            <select asp-for="Status" class="form-control">
+                <option value="0">Investigation</option>
+                <option value="1">Under Review</option>
+                <option value="2">Closed</option>
+            </select>
+        </div>
+        <br />
+        <h4>6. Evidence Files</h4>
+        @if(Model.Evidences != null && Model.Evidences.Any())
+        {
+            <div style="margin-bottom:15px;">
+                <strong>Existing Evidence:</strong>
+                <ul>@foreach(var evidence in Model.Evidences)
+                    {
+                        <li>@evidence.FileName<small style="color:#666;">-Upload on @evidence.UploadDate.ToString("dd MMM yyyy")</small></li>
+                    }
+                </ul>
+            </div>
+        }
+        else
+        {
+            <p>No evidence files uploaded yet.</p>
+        }
+
+        <div id="evidenceContainer" class="mb-3">
+            <label>Add New Evidence:</label>
+            <input type="file" name="EvidenceFiles" class="form-control" multiple />
+        </div>
+        <button type="button" class="btn btn-info mb-3" onclick="addEvidence()">+ Add Another File</button>
+        <br />
+
+        <h4>7. Witnesses</h4>
+        <div id="witnessContainer">
+
+        @if (Model.Witnesses != null && Model.Witnesses.Any())
+        {
+                @for (int i = 0; i < Model.Witnesses.Count; i++)
+                {
+                    <div class="witness-entry mb-3 border p-3" style="position:relative;" data-witness-index="@i">
+                        <input type="hidden" name="Witness[@i].WitnessId" value="@Model.Witnesses[i].WitnessId" />
+                        <input type="hidden" name="Witnesses[@i].CaseId" value="@Model.CaseId" />
+                        <label>Name:</label>
+                        <input name="Witnesses[@i].Name" value="@Model.Witnesses[i].Name" class="form-control" />
+                        <br />
+                        <label>Phone Number:</label>
+                        <input name="Witnesses[@i].PhoneNumber" value="@Model.Witnesses[i].PhoneNumber" class="form-control" />
+                        <br />
+                        <label>Statement:</label>
+                        <textarea name="Witnesses[@i].Statement" class="form-control" rows="3">@Model.Witnesses[i].Statement</textarea>
+                    </div>
+                }
+        }
+        else
+            {
+                <p id="noWitnessMessage">No witnesses recorded</p>
+            }
+        </div>
+        <button type="button" class="btn btn-info mb-3" onclick="addWitness()">Add New Witness</button>
+        <br />
+        <div style="position:sticky; bottom:20px; background:white; padding:15px; border-top:2px solid #ddd; margin-top:30px;">
+        <button type="submit" class="btn btn-success" style="padding:12px 30px; font-size:18px; margin-right:10px;"> Save </button>
+        <a asp-action="Details" asp-route-id="@Model.CaseId" class="btn btn-secondary" style="padding:12px 30px; font-size:18px;">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    window.onload = function() {
+        const banner = document.getElementById("successBanner");
+        if (banner) {
+            setTimeout(() => {
+                banner.style.display = "none";
+            }, 5000);
+        }
+
+        // Update witness index based on existing witnesses
+        updateWitnessIndex();
+    }
+    function addEvidence() {
+        const container = document.getElementById("evidenceContainer");
+        const newEntry = document.createElement("div");
+        newEntry.classList.add("evidence-entry", "mb-3");
+        newEntry.innerHTML = `
+            <label>Evidence File:</label>
+            <input type="file" name="EvidenceFiles" class="form-control" />
+        `;
+        container.appendChild(newEntry);
+    }
+
+    let witnessIndex = @(Model.Witnesses?.Count??0);
+
+    function updateWitnessIndex() {
+        const existingWitnesses = document.querySelectorAll('.witness-entry input[name*="WitnessId"]');
+        witnessIndex = existingWitnesses.length;
+        console.log("Current witness index:", witnessIndex);
+    }
+
+    function addWitness() {
+        // Hide "no witnesses" message if it exists
+        const noWitnessMsg = document.getElementById("noWitnessMessage");
+        if (noWitnessMsg) {
+            noWitnessMsg.style.display = "none";
+        }
+
+        const container = document.getElementById("witnessContainer");
+        const newEntry = document.createElement("div");
+        newEntry.classList.add("witness-entry", "mb-3", "border", "p-3");
+        newEntry.style.position = "relative";
+        newEntry.setAttribute('data-witness-index', witnessIndex);
+
+        newEntry.innerHTML = `
+            <input type="hidden" name="Witnesses[${witnessIndex}].CaseId" value="@Model.CaseId" />
+
+            <label>Name:</label>
+            <input name="Witnesses[${witnessIndex}].Name" class="form-control" />
+            <br />
+
+            <label>Phone Number:</label>
+            <input name="Witnesses[${witnessIndex}].PhoneNumber" class="form-control" />
+            <br />
+
+            <label>Statement:</label>
+            <textarea name="Witnesses[${witnessIndex}].Statement" class="form-control" rows="3"></textarea>
+
+            <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()"
+                    style="position: absolute; top: 10px; right: 10px;">
+                Remove
+            </button>
+        `;
+        container.appendChild(newEntry);
+        witnessIndex++;
+
+        console.log("Added new witness, index now:", witnessIndex);
+        }
+
+        function removeWitness(button) {
+        if (confirm("Remove this witness?")) {
+            button.closest('.witness-entry').remove();
+        }
+    }
+</script>

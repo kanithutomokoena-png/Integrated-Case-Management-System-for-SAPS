@@ -1,0 +1,199 @@
+﻿@{
+    ViewData["Title"] = "Welcome";
+}
+
+<style>
+
+    :root {
+        --saps-blue: #003366;
+        --saps-gold: #FFD700;
+        --saps-light: #f8f9fa;
+    }
+
+    .welcome-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background-color: var(--saps-light);
+        text-align: center;
+        padding: 20px;
+    }
+
+    .welcome-logo {
+        height: 130px;
+        margin-bottom: 20px;
+    }
+
+    .welcome-title {
+        color: var(--saps-blue);
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+
+    .welcome-tagline {
+        color: #6c757d;
+        font-size: 1.25rem;
+        margin-bottom: 25px;
+    }
+
+    .welcome-buttons .btn-login {
+        background-color: var(--saps-blue);
+        color: white;
+        font-size: 1.1rem;
+        padding: 10px 25px;
+        border: 2px solid black;
+        display: inline-block;
+        border-radius: 8px;
+        margin: 5px;
+    }
+
+        .welcome-buttons .btn-login:hover {
+            background-color: #002244;
+        }
+
+    .welcome-buttons .btn-register {
+        background-color: var(--saps-gold);
+        color: black;
+        font-size: 1.1rem;
+        padding: 10px 25px;
+        border: 2px solid black;
+        display: inline-block;
+        border-radius: 8px;
+        margin: 5px;
+    }
+
+    .welcome-buttons .btn-login:hover {
+        background-color: #e6c200;
+    }
+
+    .welcome-footer {
+        margin-top: 40px;
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    .dashboard-wrapper {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    .dashboard-sidebar {
+        width: 250px;
+        background-color: var(--saps-blue);
+        color: white;
+        padding: 20px 15px;
+        display: flex;
+        flex-direction: column;
+    }
+
+        .dashboard-sidebar h3 {
+            color: var(--saps-gold);
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .dashboard-sidebar a {
+            color: white;
+            text-decoration: none;
+            padding: 12px 15px;
+            margin: 5px 0;
+            border-radius: 6px;
+            transition: background 0.2s;
+            display: block;
+        }
+
+            .dashboard-sidebar a:hover,
+            .dashboard-sidebar a.active {
+                background-color: var(--saps-gold);
+                color: black;
+                font-weight: 500;
+            }
+
+    .dashboard-content {
+        flex-grow: 1;
+        padding: 30px;
+        background-color: var(--saps-light);
+    }
+
+    .officer-info {
+        padding: 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .officer-avatar {
+        font-size: 2.5rem;
+    }
+
+    .officer-info h5 {
+        margin: 0;
+        font-weight: 600;
+        color: var(--saps-gold);
+    }
+
+    .officer-info p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #ddd;
+    }
+
+    .statement {
+        padding: 20px;
+        background: #f9f9f9;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+    }
+
+        .statement h4 {
+            margin-top: 20px;
+            color: #003366;
+        }
+
+    blockquote {
+        font-style: italic;
+        background: #eef5ff;
+        padding: 10px;
+        border-left: 5px solid #003366;
+    }
+
+    .nav-card {
+        border-radius: 6px;
+        padding: 10px;
+        transition: background-color 0.2s;
+    }
+
+    .content-wrapper {
+        background: #f8f9fa;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0,0,0,.1);
+    }
+
+</style>
+
+<div class="welcome-container">
+    <img src="https://seeklogo.com/images/S/south-african-police-service-logo-6BDCE827FF-seeklogo.com.png" alt="SAPS Logo" style="height:130px;" />
+
+
+    <h1 class="welcome-title">SAPS Integrated Case Management System</h1>
+    
+    <div class="login-container">
+    <div class="welcome-buttons">
+        <a asp-controller="Account" asp-action="Login" class="btn btn-lg btn-primary m-2">
+             Login
+        </a>
+    </div>
+    </div>
+    <div class="register-container">
+    <div class="welcome-buttons">
+        <a asp-controller="Account" asp-action="Register" class="btn btn-lg btn-success m-2">
+             Register
+        </a>
+    </div>
+    </div>
+</div>
+<footer class="welcome-footer">
+    &copy; @DateTime.Now.Year South African Police Service (SAPS) - All Rights Reserved
+</footer>
+

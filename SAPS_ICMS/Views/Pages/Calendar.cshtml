@@ -1,0 +1,42 @@
+﻿@{
+    ViewData["Title"] = "Calender";
+}
+
+<div id="calendar"></div>
+
+<script>
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    let calendarEl = document.getElementById("calendar");
+
+    let calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: "dayGridMonth",
+      selectable: true,
+      editable: true,
+      events: tasks.map(t => ({ title: t.title, start: t.date })),
+      dateClick: function(info) {
+        let title = prompt("Enter event title:");
+        if (title) {
+          tasks.push({ title, date: info.dateStr });
+          localStorage.setItem("tasks", JSON.stringify(tasks));
+          calendar.addEvent({ title, start: info.dateStr });
+        }
+      },
+      eventClick: function(info) {
+        if (confirm("Delete this event?")) {
+          tasks = tasks.filter(t => !(t.title === info.event.title && t.date === info.event.startStr));
+          localStorage.setItem("tasks", JSON.stringify(tasks));
+          info.event.remove();
+        }
+      },
+      eventDrop: function(info) {
+        let task = tasks.find(t => t.title === info.event.title && t.date === info.oldEvent.startStr);
+        if (task) {
+          task.date = info.event.startStr;
+          localStorage.setItem("tasks", JSON.stringify(tasks));
+        }
+      }
+    });
+
+    calendar.render();
+</script>
+

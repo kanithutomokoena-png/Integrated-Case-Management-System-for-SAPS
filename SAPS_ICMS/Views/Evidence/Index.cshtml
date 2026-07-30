@@ -1,0 +1,46 @@
+﻿@model IEnumerable<SAPS_ICMS.Models.Evidence>
+@{
+    ViewData["Title"] = "Evidence List";
+}
+    <div style="margin-left:130px; padding:1px 16px; height:1000px;">
+        <h2 class="mb-4 text-primary">Evidence List</h2>
+
+        <form method="get" class="mb-4 d-flex">
+            <input type="text" 
+                name="searchString" 
+                value="@ViewBag.lowerSearch" 
+                class="form-control me-2" 
+                placeholder="Search by File, Case ID, or Officer..." />
+            <button type="submit" class="btn btn-primary">Search</button>
+            <a asp-action="Index" class="btn btn-secondary ms-2">Clear</a>
+        </form>
+        <br />
+        <table>
+            <thead>
+                <tr>
+                    <th>File Name</th>
+                    <th>Case ID</th>
+                    <th>Uploaded By</th>
+                    <th>Upload Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ev in Model)
+                {
+                    <tr>
+                        <td>@ev.FileName</td>
+                        <td> @ev.CaseId</td>
+                        <td>@ev.UploadedBy</td>
+                        <td>@ev.UploadDate.ToShortDateString()</td>
+                        <td>
+                            <a asp-action="Download" asp-route-id="@ev.EvidenceId" class="btn btn-sm btn-primary">Download</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+
+

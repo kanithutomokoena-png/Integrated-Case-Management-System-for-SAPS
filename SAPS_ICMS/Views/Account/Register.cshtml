@@ -1,0 +1,66 @@
+﻿@{
+    ViewData["Title"] = "Register";
+}
+
+<div class="welcome-container">
+    <img src="https://seeklogo.com/images/S/south-african-police-service-logo-6BDCE827FF-seeklogo.com.png" alt="SAPS Logo" style="height:130px;" />
+<h2>Officer Registration</h2>
+
+@if(!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
+{
+    <div class="alert alert-danger">
+        <ul>
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <li>@error.ErrorMessage</li>
+            }
+        </ul>
+    </div>
+}
+<form asp-action="Register" method="post">
+    <div class="mb-3">
+        <label>Name</label>
+        <input type="text" name="name" class="form-control" required />
+    </div>
+    <br />
+    <div class="mb-3">
+        <label>Surname</label>
+        <input type="text" name="surname" class="form-control" required />
+    </div>
+    <br />
+    <div class="mb-3">
+        <label for="role">Role</label>
+        <select name="role" class="form-control" required >
+            <option value="">Select Role</option>
+            <option value="Admin">Admin</option>
+            <option value="Detective">Detective</option>
+            <option value="Investigator">Investigator</option>
+         </select>  
+    </div>
+    <br />
+    <div class="mb-3">
+        <label>Security Number</label>
+        <input type="text" name="securityNumber" class="form-control" required />
+    </div>
+    <br />
+    @* <div class="mb-3">
+        <label>Role</label>
+        <select name="Role" class="form-control">
+            <option value="">Select Role</option>
+            <option value="Admin">Admin</option>
+            <option value="Detective">Detective</option>
+            <option value="Investigation">Investigation</option>
+        </select>
+    </div> *@
+    <div class="mb-3">
+        <label>Password</label>
+        <input type="password" name="password" class="form-control" required />
+    </div>
+    <br />
+    <button type="submit" class="btn btn-primary">Register</button>
+    <br />
+        <a asp-controller="Account" asp-action="Login" class="btn btn-lg btn-primary m-2">
+            Already have an account? Login
+        </a>
+</form>
+</div>

@@ -1,0 +1,49 @@
+﻿@{
+    ViewData["Title"] = "Tasks";
+}
+
+<h2>Tasks</h2>
+<form id="taskForm">
+    <input type="text" id="taskTitle" placeholder="Task title" required>
+    <input type="date" id="taskDate" required>
+    <button type="submit">Add Task</button>
+</form>
+<ul id="taskList"></ul>
+
+<script>
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+    function renderTasks() {
+      let list = document.getElementById("taskList");
+      list.innerHTML = "";
+      tasks.forEach((t, i) => {
+        let li = document.createElement("li");
+        li.textContent = `${t.title} (${t.date})`;
+
+        let del = document.createElement("button");
+        del.textContent = "Delete";
+        del.onclick = () => {
+          tasks.splice(i, 1);
+          localStorage.setItem("tasks", JSON.stringify(tasks));
+          renderTasks();
+        };
+
+        li.appendChild(del);
+        list.appendChild(li);
+      });
+    }
+
+    document.getElementById("taskForm").addEventListener("submit", e => {
+      e.preventDefault();
+      let title = document.getElementById("taskTitle").value;
+      let date = document.getElementById("taskDate").value;
+      if (title && date) {
+        tasks.push({ title, date });
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+        renderTasks();
+        e.target.reset();
+      }
+    });
+
+    renderTasks();
+</script>

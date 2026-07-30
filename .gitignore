@@ -1,0 +1,39 @@
+# Build folders
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.*
+
+# User Secrets
+secrets.json
+
+# Database files
+*.mdf
+*.ldf
+
+# Publish output
+publish/
+
+# Packages
+node_modules/
+
+# OS files
+Thumbs.db
+Desktop.ini
+
+# Don't ignore appsettings.json if it contains no secrets
+# Ignore only if it contains passwords
+# appsettings.json

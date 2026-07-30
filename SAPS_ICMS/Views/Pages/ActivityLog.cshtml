@@ -1,0 +1,193 @@
+﻿@model List<SAPS_ICMS.Models.ActivityLog>
+@{
+    ViewData["Title"] = "Activity Log";
+    var stats = ViewBag.Statistics;
+}
+
+<div class="tabcontent">
+    <h3>System Activity Log</h3>
+    <p style="color: #666; margin-bottom: 20px;">Track all user activities and system events</p>
+
+    <!-- Statistics Cards -->
+    <div style="display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 200px; background: #e3f2fd; padding: 20px; border-radius: 10px; text-align: center;">
+            <div style="font-size: 32px; font-weight: bold; color: #1976d2;">@stats.TotalLogs</div>
+            <div style="font-size: 14px; color: #666;">Total Activities</div>
+        </div>
+        <div style="flex: 1; min-width: 200px; background: #fff3e0; padding: 20px; border-radius: 10px; text-align: center;">
+            <div style="font-size: 32px; font-weight: bold; color: #f57c00;">@stats.TodayLogs</div>
+            <div style="font-size: 14px; color: #666;">Today's Activities</div>
+        </div>
+        <div style="flex: 1; min-width: 200px; background: #e8f5e9; padding: 20px; border-radius: 10px; text-align: center;">
+            <div style="font-size: 32px; font-weight: bold; color: #388e3c;">@stats.UniqueUsers</div>
+            <div style="font-size: 14px; color: #666;">Active Users</div>
+        </div>
+        <div style="flex: 1; min-width: 200px; background: #f3e5f5; padding: 20px; border-radius: 10px; text-align: center;">
+            <div style="font-size: 18px; font-weight: bold; color: #7b1fa2;">@stats.MostCommonAction?.Action</div>
+            <div style="font-size: 14px; color: #666;">Most Common Action</div>
+            <div style="font-size: 12px; color: #999;">(@stats.MostCommonAction?.Count times)</div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <form method="get" asp-action="ActivityLog" style="background: #f9f9f9; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">User:</label>
+                <input type="text" name="searchUser" value="@ViewBag.SearchUser" 
+                       placeholder="Search by username" class="form-control" />
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Action:</label>
+                <input type="text" name="searchAction" value="@ViewBag.SearchAction" 
+                       placeholder="Search by action" class="form-control" />
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">From Date:</label>
+                <input type="date" name="fromDate" value="@ViewBag.FromDate?.ToString("yyyy-MM-dd")" 
+                       class="form-control" />
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">To Date:</label>
+                <input type="date" name="toDate" value="@ViewBag.ToDate?.ToString("yyyy-MM-dd")" 
+                       class="form-control" />
+            </div>
+        </div>
+        <div style="margin-top: 15px; display: flex; gap: 10px;">
+            <button type="submit" class="btn btn-primary" style="padding: 10px 20px;">
+                🔍 Filter
+            </button>
+            <a href="@Url.Action("ActivityLog")" class="btn btn-secondary" style="padding: 10px 20px;">
+                Clear Filters
+            </a>
+            <a href="@Url.Action("ExportActivityLog", new { 
+                searchUser = ViewBag.SearchUser, 
+                searchAction = ViewBag.SearchAction, 
+                fromDate = ViewBag.FromDate, 
+                toDate = ViewBag.ToDate 
+            })" class="btn btn-success" style="padding: 10px 20px;">
+                📥 Export CSV
+            </a>
+        </div>
+    </form>
+
+    <!-- Activity Log Table -->
+    @if (!Model.Any())
+    {
+        <div style="background:#f0f0f0; padding:30px; text-align:center; border-radius:10px;">
+            <p style="font-size:18px; color:#666;">No activity logs found</p>
+        </div>
+    }
+    else
+    {
+        <table border="1" cellpadding="10" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background-color: #f2f2f2;">
+                    <th>Timestamp</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Entity</th>
+                    <th>Details</th>
+                    <th>IP Address</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model)
+                {
+                    <tr>
+                        <td style="white-space: nowrap;">@log.Timestamp.ToString("MMM dd, yyyy HH:mm:ss")</td>
+                        <td>
+                            <strong>@(log.UserName ?? "Unknown")</strong>
+                            <br />
+                            <small style="color: #666;">@log.UserId</small>
+                        </td>
+                        <td>
+                            <span style="padding: 4px 8px; background-color: @GetActionColor(log.Action); color: white; border-radius: 4px; font-size: 12px;">
+                                @log.Action
+                            </span>
+                        </td>
+                        <td>
+                            @if (log.EntityType != null)
+                            {
+                                <span>@log.EntityType</span>
+                                if (log.EntityId.HasValue)
+                                {
+                                    <span style="color: #666;"> #@log.EntityId</span>
+                                }
+                            }
+                            else
+                            {
+                                <span style="color: #999;">-</span>
+                            }
+                        </td>
+                        <td style="max-width: 300px; word-wrap: break-word;">
+                            @(log.Details ?? "-")
+                        </td>
+                        <td style="font-family: monospace; font-size: 12px;">@(log.IpAddress ?? "-")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        @if (ViewBag.TotalPages > 1)
+        {
+            <div style="margin-top: 20px; text-align: center;">
+                <div style="display: inline-flex; gap: 5px;">
+                    @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                    {
+                        if (i == ViewBag.CurrentPage)
+                        {
+                            <span style="padding: 8px 12px; background-color: #2196F3; color: white; border-radius: 4px; font-weight: bold;">@i</span>
+                        }
+                        else
+                        {
+                            <a href="@Url.Action("ActivityLog", new { page = i, searchUser = ViewBag.SearchUser, searchAction = ViewBag.SearchAction, fromDate = ViewBag.FromDate, toDate = ViewBag.ToDate })" 
+                               style="padding: 8px 12px; background-color: #f0f0f0; color: #333; text-decoration: none; border-radius: 4px;">@i</a>
+                        }
+                    }
+                </div>
+                <div style="margin-top: 10px; color: #666;">
+                    Page @ViewBag.CurrentPage of @ViewBag.TotalPages
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@functions {
+    string GetActionColor(string action)
+    {
+        return action switch
+        {
+            var a when a.Contains("Created") => "#4CAF50",
+            var a when a.Contains("Updated") || a.Contains("Edited") => "#2196F3",
+            var a when a.Contains("Deleted") => "#f44336",
+            var a when a.Contains("Closed") => "#FF9800",
+            var a when a.Contains("Login") => "#9C27B0",
+            var a when a.Contains("Approved") => "#4CAF50",
+            var a when a.Contains("Rejected") => "#f44336",
+            var a when a.Contains("Accessed") => "#00BCD4",
+            _ => "#757575"
+        };
+    }
+}
+
+<style>
+    table {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    table th {
+        padding: 12px;
+        text-align: left;
+    }
+    
+    table td {
+        padding: 10px;
+    }
+    
+    table tr:hover {
+        background-color: #f5f5f5;
+    }
+</style>

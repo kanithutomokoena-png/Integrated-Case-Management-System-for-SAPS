@@ -1,0 +1,272 @@
+﻿@if (ViewBag.ValidationErrors != null)
+{
+    <div class="alert alert-danger">
+        <h3>Validation Errors:</h3>
+        @foreach (var error in (Dictionary<string, List<string>>)ViewBag.ValidationErrors)
+        {
+            <p><strong>@error.Key:</strong> @string.Join(", ", error.Value)</p>
+        }
+    </div>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div id="successBanner" class="success-banner">
+        @TempData["SuccessMessage"]
+        <span class="close-btn" onclick="document.getElementById('successBanner').style.display='none'">&times;</span>
+    </div>
+}
+
+
+@model SAPS_ICMS.Models.Case
+@{
+    ViewData["Title"] = "Create Case";
+}
+
+    <div style="margin-left:130px; padding:1px 16px; height:1000px;">
+        <h2>New Case</h2>
+
+      <div class="alert alert-info" style="background-color: #d1ecf1; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+        <strong>Case Number:</strong>
+        <span id="caseNumberDisplay" style="font-size: 18px; font-weight: bold; color: #0c5460;">
+            Will be generated upon submission
+        </span>
+        <br />
+        <small style="color: #666;">The case number will be automatically assigned based on location and date</small>
+      </div>
+
+        <form asp-action="Create" method="post" enctype="multipart/form-data">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        @if(TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+        }
+
+            @if(!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger">
+                <h4>Validation Errors:</h4>
+                <ul>@foreach(var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <li>@error.ErrorMessage</li>
+                    }
+                </ul>
+            </div>
+        }
+
+            <h4>1. Header Information</h4>
+            <div class="mb-3">
+                <label>Date:</label>
+                <input asp-for="Date" type="date" class="form-control" />
+            </div>
+            <br />
+            <div class="mb-3">
+                <label for="locationTaken">Location Taken:</label>
+                <select id="locationTaken" name="locationTaken">
+                <option value="ParkRoad">Park Road</option>
+                <option value="Bayswater">Bayswater</option>
+                <option value="Navalsig">Navalsig</option>
+                <option value="Bainsvlei">Bainsvlei</option>
+                <option value="Glen">Glen</option>
+                </select>
+            </div>
+            <br />
+            <div class="mb-3">
+                <label>Officer Taking Statement:</label>
+                <input type="text" asp-for="OfficerTakingStatement" value="@ViewBag.Officer"  />
+            </div>
+
+            <h4>2. Personal Details</h4>
+            <div class="mb-3">
+                <label>Complainant Name:</label>
+                <input type="text" asp-for="Complainant" class="form-control" />
+            </div>
+            <br />
+            <div class="mb-3">
+                <label>Date of Birth:</label>
+                <input asp-for="DateOfBirth" type="date" class="form-control" />
+            </div>
+            <br />
+            <div class="mb-3">
+                <label>Home Address:</label>
+                <input asp-for="HomeAddress" class="form-control" />
+            </div>
+            <br />
+            <div class="mb-3">
+                <label>Phone Number:</label>
+                <input asp-for="PhoneNumber" class="form-control" />
+            </div>
+            <br />
+            <div class="mb-3">
+                <label>Occupation:</label>
+                <input asp-for="Occupation" class="form-control" />
+            </div>
+            <br />
+            <div class="mb-3">
+                <label>Relationship to Incident:</label><br />
+                <input type="radio" asp-for="RelationshipToIncident" value="Victim" /> Victim <br />
+                <input type="radio" asp-for="RelationshipToIncident" value="Witness" /> Witness <br />
+                <input type="radio" asp-for="RelationshipToIncident" value="Suspect" /> Suspect <br />
+            </div>
+
+            <h4>3. Caution or Legal Disclaimer</h4>
+            <blockquote>
+                "You do not have to say anything, but it may harm your defense if you do not mention when questioned
+                something which you rely on in court. Anything you do say may be given in evidence."
+            </blockquote>
+
+            <h4>4. Statement Body</h4>
+            <div class="mb-3">
+                <label>Case Information:</label>
+                <input asp-for="CaseInformation" class="form-control"></input>
+            </div>
+
+            <h4>5. Declaration and Signatures</h4>
+            <p>I confirm that this statement is true to the best of my knowledge and belief.</p>
+            <p>I understand that it may be used as evidence in court.</p>
+
+            <div class="mb-3">
+                <label>Complainant Signature:</label>
+                <input asp-for="ComplainantSignature" class="form-control" />
+            </div>
+            <br />
+            <div class="mb-3">
+                <label>Date:</label>
+                <input asp-for="ComplainantSignatureDate" type="date" class="form-control" />
+            </div>
+            <br />
+            <div class="mb-3">
+                <label>Time:</label>
+                <input asp-for="ComplainantSignatureTime" type="time" class="form-control" />
+            </div>
+            <br />
+            <div class="mb-3">
+                <label>Officer Signature:</label>
+                <input asp-for="OfficerSignature" class="form-control" />
+            </div>
+            <br />
+            <div class="mb-3">
+                <label>Date:</label>
+                <input asp-for="OfficerSignatureDate" type="date" class="form-control" />
+            </div>
+
+            <h4>6. Upload Evidence</h4>
+            <div  id="evidenceContainer"  class="mb-3">
+                <label>Evidence:</label>
+                <input type="file" name="EvidenceFiles" class="form-control" multiple />
+            </div>
+            <br />
+        <button type="button" class="btn btn-info mb-3" onclick="addEvidence()">+ Add Another File</button>
+            <br /> 
+
+        <h4>7. Witnesses</h4>
+        <div id="witnessContainer">
+                <div class="witness-entry mb-3 border p-3">
+                    <label>Name:</label>
+                    <input name="Witnesses[0].Name" class="form-control" />
+                </div>
+                <br />
+                <div class="witness-entry mb-3 border p-3">
+                    <label>Phone Number:</label>
+                    <input name="Witnesses[0].PhoneNumber" class="form-control" />
+                </div>
+                <br />
+                <div class="witness-entry mb-3 border p-3">
+                    <label>Statement:</label>
+                <input name="Witnesses[0].Statement" class="form-control">
+            </div>
+        </div>
+            <br />
+        <button type="button" class="btn btn-info mb-3" onclick="addWitness()">+ Add Another Witness</button>
+        <br />
+
+            <input type="submit" class="btn btn-success" value="Upload Case">
+            <button type="button" class="btn btn-secondary" onclick="showConfirm()">Back to Cases</button>
+        </form>
+
+    <div id="confirmBox" class="confirm-container" style="display:none;">
+        <div class="confirm-content">
+            <p>Are you sure you want to go back? Unsaved changes will be lost.</p>
+            <button onclick="goBack()" class="btn btn-danger">Yes</button>
+            <button onclick="hideConfirm()" class="btn btn-secondary">No</button>
+        </div>
+    </div>
+
+    </div>
+
+ <script>
+     window.onload = function() {
+        const banner = document.getElementById("successBanner");
+        if (banner) {
+            setTimeout(() => {
+                banner.style.display = "none";
+            }, 5000); // 5 seconds
+        }
+    }
+
+    document.getElementById('locationTaken')?.addEventListener('change', function() {
+        const location = this.value;
+        const year = new Date().getFullYear();
+
+        // Get location code
+        const locationCodes = {
+            'ParkRoad': 'PR',
+            'Bayswater': 'BW',
+            'Navalsig': 'NV',
+            'Bainsvlei': 'BV',
+            'Glen': 'GL'
+        };
+
+        const locationCode = locationCodes[location] || 'XX';
+
+        // Show preview (actual sequence will be determined by server)
+        document.getElementById('caseNumberDisplay').textContent =
+            `${locationCode}-${year}-XXXX (sequence will be auto-assigned)`;
+    });
+
+     function showConfirm() {
+        document.getElementById("confirmBox").style.display = "flex";
+    }
+    function hideConfirm() {
+        document.getElementById("confirmBox").style.display = "none";
+    }
+    function goBack() {
+        window.location.href = '/Cases/Index'; // update with your actual Cases Index route
+    }
+
+    function addEvidence() {
+        const container = document.getElementById("evidenceContainer");
+
+        const newEntry = document.createElement("div");
+        newEntry.classList.add("evidence-entry", "mb-3");
+        newEntry.innerHTML = `
+            <label>Evidence File:</label>
+            <input type="file" name="EvidenceFiles" class="form-control" />
+        `;
+
+        container.appendChild(newEntry);
+    }
+
+    let witnessIndex = 1;
+            function addWitness() {
+                const container = document.getElementById("witnessContainer");
+
+                const newEntry = document.createElement("div");
+                newEntry.classList.add("witness-entry", "mb-3", "border", "p-3");
+                newEntry.innerHTML = `
+                    <label>Name:</label>
+                    <input name="Witnesses[${witnessIndex}].Name" class="form-control" />
+
+                    <label>Phone Number:</label>
+                    <input name="Witnesses[${witnessIndex}].PhoneNumber" class="form-control" />
+
+                    <label>Statement:</label>
+                    <textarea name="Witnesses[${witnessIndex}].Statement" class="form-control"></textarea>
+                `;
+
+                container.appendChild(newEntry);
+                witnessIndex++;
+            }
+</script>
+
+

@@ -1,0 +1,332 @@
+﻿@model List<SAPS_ICMS.Models.Case>
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Dashboard";
+    var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = null, WriteIndented = false };
+    var jsonCases = JsonSerializer.Serialize(Model, jsonOptions);
+    bool isAdmin = User.IsInRole("Admin");
+    int pendingRequests=ViewBag.PendingRequests??0;
+}
+
+<div class="tabcontent">
+
+        <div class="dashboard-cards">
+            <div style="background:#f1f1f1; padding:20px; border-radius:10px; width:200px; text-align:center;">
+            <h2 id="totalCases">0</h2>
+            <p>Total Cases</p>
+            </div>
+
+    
+        <div style="background:#c8e6c9; padding:20px; border-radius:10px; width:200px; text-align:center;">
+            <h2 id="closedCases">0</h2>
+            <p>Closed Cases</p>
+        </div>
+
+        @if(User.IsInRole("Detective"))
+        {
+            <div style="background:#4CAF50; padding:20px; border-radius:10px; width:200px; text-align:center;">
+                <h2>@(ViewBag.ApprovedEditRequests ?? 0)</h2>
+                <p style="color:white;">Approved Edits</p>
+                <button onclick="window.location.href='/Pages/MyApprovedEditRequests'" style="padding:8px 16px; cursor:pointer; background-color:white; color:#4CAF50; border:none; border-radius:4px;">Edit Now</button>
+            </div>
+        }
+
+    @if(isAdmin)
+    {
+        <div style="background:#fff3cd; padding:20px; border-radius:10px; width:200px; text-align:center;">
+            <h2>@pendingRequests</h2>
+            <p>Pending Requests</p>
+                <button onclick="viewPendingRequests()" style="padding: 8px 16px; cursor: pointer;">Review</button>           
+        </div>   
+        <div style="background:#ffccbc; padding: 20px; border-radius:10px; width:200px; text-align: center;">
+            <h2>@ViewBag.PendingEditRequests</h2>
+            <p>Pending Edits</p>
+            <button onclick="viewPendingEditRequests()" style="padding:8px 16px; cursor:pointer;">Review</button>
+        </div>
+    }
+        </div>
+</div>
+
+<div style="margin-left:130px; padding:1px 16px; height:1000px;">
+<h3>Cases List</h3>
+<table border="1" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+    <thead>
+        <tr style="background-color: #f2f2f2;">
+            <th>Case ID</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody id="casesTable"></tbody>
+</table>
+</div>
+
+
+@Html.AntiForgeryToken()
+
+<!-- Modal for closure request -->
+<div id="closureModal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.4);">
+    <div style="background-color:#fefefe; margin:15% auto; padding:20px; border:1px solid #888; width:400px; border-radius:10px;">
+        <h3>Request Case Closure</h3>
+        <p>Please provide a reason for closing this case:</p>
+        <textarea id="closureReason" rows="4" style="width:100%; padding:8px; margin: 10px 0;" placeholder="Enter reason for closure..."></textarea>
+        <div style="text-align:right; margin-top:15px;">
+            <button onclick="closeModal()" style="padding:8px 16px; margin-right:10px; border-radius:4px; cursor:pointer;">Cancel</button>
+            <button onclick="submitClosureRequest()" style="padding:8px 16px; background-color:cornflowerblue; color:white; border:none; border-radius:4px; cursor:pointer;">Submit Request</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    console.log("Raw JSON from server:", '@Html.Raw(jsonCases)');
+
+        let cases = @Html.Raw(jsonCases);
+        let isAdmin = @Html.Raw(isAdmin.ToString().ToLower());
+        let currentCaseId = null;
+
+        console.log("Cases loaded:", cases);
+        console.log("Cases type:", typeof cases);
+        console.log("Is array?:", Array.isArray(cases));
+        console.log("Total cases:", cases ? cases.length : 'cases is null/undefined');
+        console.log("Is Admin:", isAdmin);
+
+        if (!cases) {
+          console.error("ERROR: cases is null or undefined!");
+          cases = [];
+      } else if (!Array.isArray(cases)) {
+          console.error("ERROR: cases is not an array, it's a:", typeof cases);
+          console.log("Attempting to access first item:", cases[0]);
+      }
+
+       function renderDashboard() {
+           console.log("=== renderDashboard called ===");
+
+           if (!cases || !Array.isArray(cases)) {
+            console.error("Cases is not a valid array:", cases);
+            document.getElementById("totalCases").textContent = "0";
+            document.getElementById("closedCases").textContent = "0";
+            return;
+        }
+
+        console.log("Rendering dashboard with", cases.length, "cases");
+        console.log("First case:", cases[0]);
+        document.getElementById("totalCases").textContent = cases.length;
+
+      const closedStatusValue = 2;
+      const closedCount = cases.filter(c =>
+            c.Status === closedStatusValue).length;
+        document.getElementById("closedCases").textContent = closedCount;
+
+      const tbody = document.getElementById("casesTable");
+      console.log("Table body element found:", tbody);
+
+      if(!tbody){
+          console.error("Table body not found");
+          return;
+      }
+
+        tbody.innerHTML = "";
+
+        if(cases.length === 0){
+            console.log("No cases, showing empty message");
+            tbody.innerHTML = '<tr><td colspan="4"> style="text-align:center; padding:20px; color:#666;">No cases found. Create a new case to get started.</td></tr>';
+            return;
+        }
+
+         console.log("Processing", cases.length, "cases...");
+
+        cases.forEach((c, index) => {
+            console.log(`Processing case ${index + 1}:`, c);
+            console.log(`Case properties:`, Object.keys(c));
+            console.log(`CaseId value:`, c.CaseId);
+
+            const row = document.createElement("tr");
+
+            console.log(`Case ${c.CaseId} - Status:`, c.Status, typeof c.Status);
+
+            let actionButton = '';
+
+            const isClosed = c.Status === closedStatusValue;
+
+            if(!isClosed)
+            {
+                if(isAdmin){
+                    actionButton = `<button onclick="closeCase(${c.CaseId})" style="padding:6px 12px; background-color:#f44336; color:white; border:none; border-radius:4px; cursor:pointer;">Close Case</button>`;
+                } else{
+                    actionButton = `<button onclick="showClosureModal(${c.CaseId})" style="padding:6px 12px; background-color:#f44336; color:white; border:none; border-radius:4px; cursor:pointer;">Request Closure</button>`;
+                } 
+            } else{
+                    actionButton = `<span style="color:#666;">Already Closed</span>`;
+            }
+                const statusColor = isClosed ? '#c8e6c9' : '#fff3cd';
+                const statusText = getStatusText(c.Status);
+
+                console.log(`Status for case ${c.CaseId}: ${c.Status} -> ${statusText}`);
+                console.log(`Button will be: showClosureModal(${c.CaseId})`);
+                console.log(`Creating row for case ${c.CaseId}, action button:`, actionButton);
+
+            row.innerHTML = `
+                    <td>${escapeHtml(c.CaseId)}</td>
+                    <td><span style="padding:4px 8px; background-color:${c.Status === 'Closed' ? '#c8e6c9' : '#fff3cd'}; border-radius:4px;">${escapeHtml(c.Status)}</span></td>
+                    <td>${actionButton}</td>`;
+            console.log("Appending row to tbody");
+            tbody.appendChild(row);
+        });
+        console.log("=== renderDashboard completed ===");
+        console.log("Table now has", tbody.children.length, "rows");
+    }
+
+    function getStatusText(status) {
+        const statusMap = {
+            0: 'Investigation',
+            1: 'Under Review',
+            2: 'Closed'
+        };
+        const result = statusMap[status];
+        if(result === undefined)
+        {
+            console.warn(`Unknown status value: ${status}. Using 'Status ${status}' as fallback.`);
+            return `Status ${status}`;
+        }
+
+        return result;
+    }
+
+    function escapeHtml(text) {
+        if (text === null || text === undefined) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function closeCase(caseId) {
+        if (confirm("Admin Alert: Are you sure you want to close this case?")) {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            fetch('/Pages/CloseCase', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: caseId, __RequestVerificationToken: token })
+            })
+            .then(r => {
+                if(!r.ok) throw new Error('Network response was not ok');
+                return r.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    let caseObj = cases.find(c => c.CaseId === caseId);
+                    if (caseObj) caseObj.Status = "Closed";
+                    alert(data.message);
+                    window.location.reload();
+                    renderDashboard();
+                } else {
+                    alert("Error: " + data.message);
+                }
+            })
+            .catch(error =>{
+                alert("An error occurred: " + error.message);
+            });
+        }
+    }
+
+    function showClosureModal(caseId) {
+        console.log("showClosureModal called with caseId:", caseId);
+        currentCaseId = caseId;
+        console.log("currentCaseId set to:", currentCaseId);
+        document.getElementById("closureModal").style.display = "block";
+        document.getElementById("closureReason").value = "";
+        document.getElementById("closureReason").focus();
+    }
+
+    function closeModal() {
+        document.getElementById("closureModal").style.display = "none";
+        currentCaseId = null;
+    }
+    function submitClosureRequest() {
+        const reason = document.getElementById("closureReason").value.trim();
+
+        console.log("Current case ID:", currentCaseId);
+        console.log("Reason:", reason);
+
+        if (!currentCaseId) {
+            alert("Error: No case selected");
+            return;
+        }
+        
+        if (!reason) {
+            alert("Please provide a reason for closure");
+            return;
+        }
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        console.log("Submitting closure request:", {
+            caseId: currentCaseId,
+            reason: reason
+        });
+
+        const formData = new FormData();
+        formData.append('caseId', currentCaseId);
+        formData.append('Reason', reason);
+        formData.append('__RequestVerificationToken', token);
+
+        console.log("FormData contents:");
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ': ' + pair[1]);
+        }
+
+        fetch('/Pages/RequestCaseClosure', {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => {
+            console.log("Response status:", r.status);
+            console.log("Response ok:", r.ok);
+            if (!r.ok) {
+                return r.text().then(text => {
+                    console.error("Error response:", text);
+                    throw new Error(`Server returned ${r.status}: ${text}`);
+                });
+            }
+            return r.json();
+        })
+        .then(data => {
+            console.log("Success response:", data);
+            if (data.success) {
+                alert(data.message);
+                closeModal();
+            } else {
+                alert("Error: " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error("Fetch error:", error);
+            alert("An error occurred: " + error.message);
+        });
+    }
+    function viewPendingRequests() {
+        window.location.href = '/Pages/PendingClosureRequests';
+    }
+    function viewPendingEditRequests() {
+        window.location.href = '/Pages/PendingEditRequests';
+    }
+
+        function viewCaseDetails() {
+            if (!cases || cases.length === 0) {
+            alert("No cases available");
+            return;
+        }
+
+      let details = cases.map(c => {
+            const statusText = getStatusText(c.Status);
+            return `Case ${c.CaseId}:(${statusText})`;
+        }).join("\n");
+        alert("Case Details:\n\n" + details);
+    }
+     window.onclick = function(event) {
+        const modal = document.getElementById("closureModal");
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+    renderDashboard();
+</script>

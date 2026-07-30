@@ -1,0 +1,102 @@
+﻿@model List<SAPS_ICMS.Models.CaseEditRequest>
+@{
+    ViewData["Title"] = "My Approved Edit Requests";
+}
+
+<div class="tabcontent">
+    <h3>My Approved Edit Requests</h3>
+
+    @if(TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if(!Model.Any())
+    {
+        <div style="background:#f0f0f0; padding:30px; text-align:center; border-radius:10px;">
+            <p style="font-size:18px; color:#666;">No approved edit requests at the moment</p>
+        </div>
+    }
+    else
+    {
+        <table border="1" cellpadding="10" style="width:100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background-color:#f2f2f2;">
+                    <th>Request ID</th>
+                    <th>Case ID</th>
+                    <th>Requested By</th>
+                    <th>Reviewed When</th>
+                    <th>Approved Date</th>
+                    <th>Your Request Changes</th>
+                    <th>Admin Notes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach(var request in Model)
+                {
+                    <tr>
+                        <td>@request.EditRequestId</td>
+                        <td>@request.CaseId</td>
+                        <td>@(request.RequestedByUserName??"Unknown")</td>
+                        <td>@(request.ReviewedDate?.ToString("dd MMM yyyy HH:mm")?? "N/A")</td>
+                        <td>@request.ReviewedDate?.ToString("dd MMM yyyy")</td>
+                        <td style="max-width:300px;">@(request.RequestedChanges ?? "N/A")</td>
+                        <td style="max-width:250px;">@(request.AdminNotes ?? "No notes")</td>
+                        <td>
+                            <a href="@Url.Action("Edit", "Cases", new {id = request.CaseId})" class="btn btn-warning" style="padding:8px 16px; background-color:#FF9800; color:white; border-radius:4px; display:inline-block;">Edit Case</a>
+                            <button onclick="removeRequest(@request.EditRequestId)"
+                                    class="btn btn-danger"
+                                    style="padding: 8px 16px; background-color: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                Remove
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@Html.AntiForgeryToken()
+
+<script>
+    function removeRequest(editRequestId) {
+        if (confirm("Are you sure you want to remove this edit request?")) {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            const formData = new FormData();
+            formData.append('editRequestId', editRequestId);
+            formData.append('__RequestVerificationToken', token);
+
+            fetch('/Pages/CancelEditRequest', {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => {
+                if (!r.ok) {
+                    return r.text().then(text => {
+                        console.error("Error response:", text);
+                        throw new Error(`Server returned ${r.status}`);
+                    });
+                }
+                return r.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert("Error: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error("Fetch error:", error);
+                alert("An error occurred: " + error.message);
+            });
+        }
+    }
+</script>
+
